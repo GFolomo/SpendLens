@@ -73,12 +73,8 @@ plot, campaign = st.columns([2, 1])
 with plot:
     with st.container(border=True):
         st.subheader("Spend and invoice frequency")
-        focus = st.checkbox("Focus on net sales of 100 and above", value=True)
-        minimum = 100 if focus and profiles.Spend.max() >= 100 else profiles.Spend.min()
+        minimum = 100 if profiles.Spend.max() >= 100 else profiles.Spend.min()
         visible = profiles[profiles.Spend >= minimum]
-        hidden = len(profiles) - len(visible)
-        if hidden:
-            st.caption(f"{hidden:,} customers below 100 are outside this view and included in the segment totals.")
         x_step = max(50, 50 * math.ceil(profiles.Invoices.max() / 300))
         x_max = x_step * math.ceil(profiles.Invoices.max() / x_step)
         low = math.floor(math.log10(minimum))
