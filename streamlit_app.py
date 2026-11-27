@@ -58,6 +58,7 @@ upload = st.sidebar.file_uploader(
     "Upload invoice history", type=["csv", "xlsx", "xls"], label_visibility="collapsed",
     on_change=lambda: st.session_state.update(source="Upload file"),
 )
+sales_label = "Net sales (£)" if source == "Sample dataset" else "Net sales"
 subtitle = "Dec 2010 to Dec 2011 · Online Retail sample"
 
 if source == "Sample dataset":
@@ -126,7 +127,7 @@ with plot:
         chart = alt.Chart(visible).mark_circle(clip=True).encode(
             x=alt.X("Invoices:Q", title="Invoice count", scale=alt.Scale(domain=[0, x_max], nice=False),
                     axis=alt.Axis(values=list(range(0, x_max + 1, x_step)), format="d")),
-            y=alt.Y("Spend:Q", title="Net sales (log scale)",
+            y=alt.Y("Spend:Q", title=f"{sales_label}, log scale",
                     scale=alt.Scale(type="log", domain=[10.0**low, 10.0**high], nice=False),
                     axis=alt.Axis(values=y_ticks, labelExpr="'10^' + round(log(datum.value) / log(10))")),
             color=alt.Color("Segment:N", scale=alt.Scale(domain=SEGMENTS, range=COLORS), legend=None),
@@ -134,7 +135,7 @@ with plot:
             opacity=alt.condition(alt.datum.Segment == "Lower spend", alt.value(0.58), alt.value(0.95)),
             stroke=alt.condition(alt.datum.Segment == "High value", alt.value("white"), alt.value("transparent")),
             strokeWidth=alt.value(1.2),
-            tooltip=["Segment:N", "Invoices:Q", alt.Tooltip("Spend:Q", format=",.2f")],
+            tooltip=["Segment:N", "Invoices:Q", alt.Tooltip("Spend:Q", title=sales_label, format=",.2f")],
         ).properties(height=380).interactive().configure_axis(
             domainColor="#53616b", tickColor="#aab5bd", grid=True, gridColor="#dce3e8",
             labelColor="#26343e", labelFontSize=13, labelPadding=8,
