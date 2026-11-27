@@ -12,16 +12,58 @@ SEGMENTS = ["Lower spend", "Moderate spend", "High value"]
 COLORS = ["#5888b8", "#168975", "#c62828"]
 REQUIRED = ["CustomerID", "InvoiceNo", "Quantity", "UnitPrice"]
 
-st.set_page_config(page_title="SpendLens", layout="wide")
-st.sidebar.title("SpendLens")
-source = st.sidebar.radio("Data source", ["Sample dataset", "Upload file"])
+st.set_page_config(page_title="Segmint", layout="wide")
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {background: linear-gradient(155deg, #edf3e9, #daeade);}
+.segmint-brand {display:flex; align-items:center; gap:14px; font-size:30px;
+    font-weight:800; letter-spacing:-.04em; color:#101820;
+    border-bottom:1px solid #becfc4; padding-bottom:18px; margin-bottom:10px;}
+.segmint-mark {display:inline-flex; align-items:flex-end; gap:4px; height:26px;}
+.segmint-mark i {display:block; width:6px; border-radius:2px; background:#087653;}
+.segmint-mark i:nth-child(1) {height:10px;}
+.segmint-mark i:nth-child(2) {height:17px;}
+.segmint-mark i:nth-child(3) {height:25px;}
+[data-testid="stMain"] h1 {font-size:clamp(2.5rem, 4.8vw, 3.6rem); font-weight:850; letter-spacing:-.045em;}
+[data-testid="stMain"] h3 {font-size:clamp(1.35rem, 2.2vw, 1.9rem); font-weight:800; letter-spacing:-.035em;}
+.segment-card {border-left:6px solid var(--segment); background:var(--tint); padding:18px 22px;
+    border-radius:12px; color:#46545a; font-size:1.08rem; line-height:1.5;}
+.segment-card strong {display:block; color:#101820; font-size:1.45rem; font-weight:800; letter-spacing:-.035em;}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+    position:relative; min-height:168px; display:flex; flex-direction:column; justify-content:center;
+    text-align:center; background:#f6faf45c; border:1.5px dashed #7d9589; border-radius:12px; padding:16px;}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] {display:none;}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::before {
+    content:"↑"; font-size:34px; font-weight:800; line-height:1; color:#375b4d; pointer-events:none;}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after {
+    content:"CSV or Excel (.csv, .xlsx, .xls)"; color:#465b51; font-size:.8rem; pointer-events:none;}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
+    background:transparent; border:0; color:#10201b; white-space:normal; min-height:58px;}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button > * {
+    position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%);}
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button::after {
+    content:"Drop a CSV or Excel file here, or click to browse"; max-width:185px; font-size:.95rem;}
+.segment-legend {display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 16px; padding:5px 6px 8px;}
+.segment-legend span {display:inline-flex; align-items:center; gap:8px; font-size:.92rem;}
+.segment-legend i {width:12px; height:12px; border-radius:50%; background:var(--segment);}
+</style>
+""", unsafe_allow_html=True)
+st.sidebar.markdown(
+    '<div class="segmint-brand"><span class="segmint-mark" aria-hidden="true">'
+    '<i></i><i></i><i></i></span>Segmint</div>',
+    unsafe_allow_html=True,
+)
+source = st.sidebar.radio("**Data source**", ["Sample dataset", "Upload file"], key="source")
+upload = st.sidebar.file_uploader(
+    "Upload invoice history", type=["csv", "xlsx", "xls"], label_visibility="collapsed",
+    on_change=lambda: st.session_state.update(source="Upload file"),
+)
 subtitle = "Dec 2010 to Dec 2011 · Online Retail sample"
 
 if source == "Sample dataset":
     profiles = pd.read_csv(ROOT / "sample_profiles.csv")
 else:
     st.sidebar.caption("Use approximately 12 months of invoice history.")
-    upload = st.sidebar.file_uploader("Upload invoice history", type=["csv", "xlsx"])
     if upload is None:
         st.title("Customer segments")
         st.info("Upload a CSV or Excel workbook with CustomerID, InvoiceNo, Quantity and UnitPrice.")
@@ -58,12 +100,13 @@ else:
 st.title("Customer segments")
 st.caption(f"{len(profiles):,} customers · {subtitle}")
 total_sales = profiles.Spend.sum()
+counts = profiles.Segment.value_counts()
 for column, segment, color in zip(st.columns(3), SEGMENTS, COLORS):
     group = profiles[profiles.Segment == segment]
     with column:
         st.markdown(
-            f'<div style="border-left:5px solid {color};background:{color}18;padding:16px;border-radius:10px">'
-            f'<strong>{segment}</strong><br>{len(group):,} customers<br>'
+            f'<div class="segment-card" style="--segment:{color};--tint:{color}18">'
+            f'<strong>{segment}</strong>{len(group):,} customers<br>'
             f'{group.Spend.sum()/total_sales:.1%} of net sales</div>',
             unsafe_allow_html=True,
         )
@@ -86,11 +129,16 @@ with plot:
             y=alt.Y("Spend:Q", title="Net sales (log scale)",
                     scale=alt.Scale(type="log", domain=[10.0**low, 10.0**high], nice=False),
                     axis=alt.Axis(values=y_ticks, format="~s")),
-            color=alt.Color("Segment:N", scale=alt.Scale(domain=SEGMENTS, range=COLORS), legend=alt.Legend(orient="bottom")),
+            color=alt.Color("Segment:N", scale=alt.Scale(domain=SEGMENTS, range=COLORS), legend=None),
             tooltip=["Segment:N", "Invoices:Q", alt.Tooltip("Spend:Q", format=",.2f")],
         ).properties(height=380).interactive()
         with alt.data_transformers.enable("default", max_rows=None):
             st.altair_chart(chart, use_container_width=True)
+        legend = "".join(
+            f'<span style="--segment:{color}"><i aria-hidden="true"></i>{segment} ({counts.get(segment, 0):,})</span>'
+            for segment, color in zip(SEGMENTS, COLORS)
+        )
+        st.markdown(f'<div class="segment-legend">{legend}</div>', unsafe_allow_html=True)
 with campaign:
     with st.container(border=True):
         st.subheader("Campaign audience")
@@ -100,5 +148,5 @@ with campaign:
         st.write(f"{len(audience):,} customers · {campaign_type[target]}")
         export = audience.copy()
         export["CustomerID"] = export.CustomerID.astype(str).str.replace(r"^([=+@\-\t\r])", r"'\1", regex=True)
-        st.download_button("Download audience CSV", export.to_csv(index=False), "spendlens-audience.csv", "text/csv", disabled=audience.empty, type="primary")
+        st.download_button("Download audience CSV", export.to_csv(index=False), "segmint-audience.csv", "text/csv", disabled=audience.empty, type="primary")
         st.dataframe(audience.head(8), hide_index=True)
