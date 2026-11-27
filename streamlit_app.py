@@ -9,7 +9,7 @@ import streamlit as st
 
 ROOT = Path(__file__).parent
 SEGMENTS = ["Lower spend", "Moderate spend", "High value"]
-COLORS = ["#5888b8", "#168975", "#cc951e"]
+COLORS = ["#5888b8", "#168975", "#c62828"]
 REQUIRED = ["CustomerID", "InvoiceNo", "Quantity", "UnitPrice"]
 
 st.set_page_config(page_title="SpendLens", layout="wide")
@@ -106,4 +106,3 @@ with campaign:
         export["CustomerID"] = export.CustomerID.astype(str).str.replace(r"^([=+@\-\t\r])", r"'\1", regex=True)
         st.download_button("Download audience CSV", export.to_csv(index=False), "spendlens-audience.csv", "text/csv", disabled=audience.empty, type="primary")
         st.dataframe(audience.head(8), hide_index=True)
-
