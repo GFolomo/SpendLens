@@ -67,3 +67,16 @@ Download the Excel workbook from the [dataset page](https://www.kaggle.com/datas
 python -m pip install jupyterlab pandas numpy scikit-learn matplotlib seaborn openpyxl
 python -m jupyterlab SpendLens_Clustering_ML.ipynb
 ```
+
+## Streamlit dashboard
+
+Run the dashboard locally with Python 3.12.
+
+```sh
+python -m pip install -r requirements.txt
+python -m streamlit run streamlit_app.py
+```
+
+The dashboard opens with de-identified sample customer profiles. Upload a CSV or XLSX with about 12 months of invoice lines and the columns CustomerID, InvoiceNo, Quantity and UnitPrice. The app applies the notebook’s fitted scaler and cluster centres to each batch. Select a segment to download its audience. Use a private deployment for real customer files.
+
+For Streamlit Community Cloud, use main and the streamlit_app.py entry point.
