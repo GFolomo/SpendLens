@@ -15,6 +15,9 @@ REQUIRED = ["CustomerID", "InvoiceNo", "Quantity", "UnitPrice"]
 st.set_page_config(page_title="Segmint", layout="wide")
 st.markdown("""
 <style>
+:root {
+    --upload-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 15v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-5M12 16V3m-5 5 5-5 5 5'/%3E%3C/svg%3E");
+}
 [data-testid="stSidebar"] {background: linear-gradient(155deg, #edf3e9, #daeade);}
 .segmint-brand {display:flex; align-items:center; gap:14px; font-size:30px;
     font-weight:800; letter-spacing:-.04em; color:#101820;
@@ -34,7 +37,8 @@ st.markdown("""
     text-align:center; background:#f6faf45c; border:1.5px dashed #7d9589; border-radius:12px; padding:16px;}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] {display:none;}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::before {
-    content:"↑"; font-size:34px; font-weight:800; line-height:1; color:#375b4d; pointer-events:none;}
+    content:""; width:36px; height:36px; color:#375b4d; pointer-events:none;
+    background:currentColor; mask:var(--upload-icon) center / contain no-repeat;}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after {
     content:"CSV or Excel (.csv, .xlsx, .xls)"; color:#465b51; font-size:.8rem; pointer-events:none;}
 [data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] button {
@@ -157,5 +161,5 @@ with campaign:
         st.write(f"{len(audience):,} customers · {campaign_type[target]}")
         export = audience.copy()
         export["CustomerID"] = export.CustomerID.astype(str).str.replace(r"^([=+@\-\t\r])", r"'\1", regex=True)
-        st.download_button("Download audience CSV", export.to_csv(index=False), "segmint-audience.csv", "text/csv", disabled=audience.empty, type="primary")
+        st.download_button("Download audience CSV", export.to_csv(index=False), "segmint-audience.csv", "text/csv", disabled=audience.empty, type="primary", icon=":material/download:")
         st.dataframe(audience.head(8), hide_index=True)
