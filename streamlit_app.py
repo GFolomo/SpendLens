@@ -123,15 +123,23 @@ with plot:
         low = math.floor(math.log10(minimum))
         high = max(low + 1, math.ceil(math.log10(profiles.Spend.max())))
         y_ticks = [10.0**power for power in range(low, high + 1, max(1, math.ceil((high - low) / 8)))]
-        chart = alt.Chart(visible).mark_circle(size=40, opacity=0.65, clip=True).encode(
+        chart = alt.Chart(visible).mark_circle(clip=True).encode(
             x=alt.X("Invoices:Q", title="Invoice count", scale=alt.Scale(domain=[0, x_max], nice=False),
                     axis=alt.Axis(values=list(range(0, x_max + 1, x_step)), format="d")),
             y=alt.Y("Spend:Q", title="Net sales (log scale)",
                     scale=alt.Scale(type="log", domain=[10.0**low, 10.0**high], nice=False),
-                    axis=alt.Axis(values=y_ticks, format="~s")),
+                    axis=alt.Axis(values=y_ticks, labelExpr="'10^' + round(log(datum.value) / log(10))")),
             color=alt.Color("Segment:N", scale=alt.Scale(domain=SEGMENTS, range=COLORS), legend=None),
+            size=alt.condition(alt.datum.Segment == "High value", alt.value(115), alt.value(36)),
+            opacity=alt.condition(alt.datum.Segment == "Lower spend", alt.value(0.58), alt.value(0.95)),
+            stroke=alt.condition(alt.datum.Segment == "High value", alt.value("white"), alt.value("transparent")),
+            strokeWidth=alt.value(1.2),
             tooltip=["Segment:N", "Invoices:Q", alt.Tooltip("Spend:Q", format=",.2f")],
-        ).properties(height=380).interactive()
+        ).properties(height=380).interactive().configure_axis(
+            domainColor="#53616b", tickColor="#aab5bd", grid=True, gridColor="#dce3e8",
+            labelColor="#26343e", labelFontSize=13, labelPadding=8,
+            titleColor="#15232d", titleFontSize=15, titleFontWeight=600, titlePadding=14,
+        ).configure_view(stroke="#dce3e8")
         with alt.data_transformers.enable("default", max_rows=None):
             st.altair_chart(chart, use_container_width=True)
         legend = "".join(
