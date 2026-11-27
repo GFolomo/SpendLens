@@ -20,16 +20,40 @@ The source workbook covers 1 December 2010 to 9 December 2011. Its eight fields 
 
 ## From invoice lines to customer profiles
 
-1. Start with 541,909 retail line items. Exclude 135,080 rows without a customer ID, then remove 5,225 duplicate rows.
-2. Multiply quantity by unit price, sum the resulting sales by customer and count distinct invoice numbers. Keep customers with positive net sales.
-3. Standardise the two features and fit K-means in scikit-learn. Scaling keeps the much larger numerical range of spending from dominating distances. Use the elbow plot to choose a four-cluster baseline, then compare three to six clusters and use principal component analysis (PCA) to visualise the assignments.
+### 1. Define the business question
 
-| Evaluation metric | Four-cluster baseline | Selected three-cluster model |
+Which customers buy frequently, and which account for the most sales? The unit of analysis is one customer. With no preassigned customer labels, the project uses unsupervised clustering to find groups that a marketing team could target differently.
+
+### 2. Explore and clean the invoice data
+
+The notebook loads the Excel workbook into pandas and checks its shape, data types, missing values and duplicate records. Of 541,909 invoice lines, 135,080 lack a customer ID and cannot be attributed to a buyer. Removing those rows and 5,225 duplicate lines leaves 401,604 lines for customer-level aggregation.
+
+### 3. Engineer and explore customer features
+
+For each customer, the notebook computes **net sales** by summing quantity × unit price across their invoice lines. It measures **purchasing frequency** by counting distinct invoice numbers, so buying several products on one invoice counts once. Aggregation yields 4,372 customer profiles. Keeping customers with positive net sales leaves 4,322 for modelling.
+
+The median customer has three invoices, while the maximum is 248. A scatter plot of spend against invoice count shows that the features also have very different numerical ranges. Because K-means assigns customers by distance, the notebook applies scikit-learn’s `StandardScaler` to both features before fitting the model.
+
+### 4. Establish a clustering baseline
+
+The notebook fits K-means for one through ten clusters and plots inertia, the sum of squared distances from customers to their assigned cluster centres. The elbow plot guides the choice of a four-cluster baseline. A scatter plot shows the assignments, and a two-component PCA view provides a second way to inspect the same groups. The model uses the two standardised customer features.
+
+### 5. Tune and evaluate the model
+
+A manual grid search compares 16 configurations across three to six clusters, one or 20 initialisations, and a limit of one or 100 iterations per start. The notebook selects the configuration with the highest silhouette score, a measure of how closely customers resemble their own group relative to neighbouring groups.
+
+| Metric | Four-cluster baseline | Best value observed in the search |
 | --- | ---: | ---: |
 | Silhouette score (higher is better) | 0.768 | 0.878 |
 | Davies–Bouldin index (lower is better) | 0.648 | 0.612 |
 
-These scores describe separation within the observed data. The selected configuration used k-means++ initialisation, 20 starts and a limit of one iteration per start, and the smallest segment contains just four customers. Before using these groups for ongoing campaigns, check whether assignments hold across random seeds, additional iterations and later purchase periods.
+The silhouette winner uses three clusters, k-means++ initialisation, 20 starts and one iteration per start. The notebook tracks the lowest Davies–Bouldin index independently across all configurations. The scores describe cluster separation within this dataset.
+
+### 6. Interpret the segments for marketing
+
+The notebook groups customers by their final labels and summarises spend and invoice counts in their original units. The moderate-spend group averages 41.2 invoices per customer, compared with 4.1 in the lower-spend group. That repeat buying makes the 109 moderate spenders a candidate audience for a cross-selling test. The four high-value customers account for 10.3% of cohort net sales, which supports a separate retention proposal.
+
+Before using the segments for ongoing campaigns, check whether the four-customer group persists across random seeds, additional iterations and later purchase periods. A controlled campaign test could then measure whether targeting improves sales.
 
 ## Further analysis
 
