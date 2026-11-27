@@ -2,7 +2,7 @@
 
 Which retail customers warrant a cross-selling campaign, and which merit individual attention? SpendLens uses K-means to group **4,322 customers** by total spend and invoice count. Four customers accounted for **10.3% of net sales** in the analysed cohort.
 
-[Explore the analysis notebook](SpendLens_Clustering_ML.ipynb) · [Read the project description](Project%20Description.txt) · [View the source dataset](https://www.kaggle.com/datasets/yasserh/customer-segmentation-dataset)
+[Explore the analysis notebook](SpendLens_Clustering_ML.ipynb) · [View the source dataset](https://www.kaggle.com/datasets/yasserh/customer-segmentation-dataset)
 
 ## Customer segments
 
