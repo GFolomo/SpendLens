@@ -1,4 +1,5 @@
 import json
+import math
 from pathlib import Path
 
 import altair as alt
@@ -72,9 +73,23 @@ plot, campaign = st.columns([2, 1])
 with plot:
     with st.container(border=True):
         st.subheader("Spend and invoice frequency")
-        chart = alt.Chart(profiles).mark_circle(size=40, opacity=0.65).encode(
-            x=alt.X("Invoices:Q", title="Invoice count"),
-            y=alt.Y("Spend:Q", title="Net sales (log scale)", scale=alt.Scale(type="log")),
+        focus = st.checkbox("Focus on net sales of 100 and above", value=True)
+        minimum = 100 if focus and profiles.Spend.max() >= 100 else profiles.Spend.min()
+        visible = profiles[profiles.Spend >= minimum]
+        hidden = len(profiles) - len(visible)
+        if hidden:
+            st.caption(f"{hidden:,} customers below 100 are outside this view and included in the segment totals.")
+        x_step = max(50, 50 * math.ceil(profiles.Invoices.max() / 300))
+        x_max = x_step * math.ceil(profiles.Invoices.max() / x_step)
+        low = math.floor(math.log10(minimum))
+        high = max(low + 1, math.ceil(math.log10(profiles.Spend.max())))
+        y_ticks = [10.0**power for power in range(low, high + 1, max(1, math.ceil((high - low) / 8)))]
+        chart = alt.Chart(visible).mark_circle(size=40, opacity=0.65, clip=True).encode(
+            x=alt.X("Invoices:Q", title="Invoice count", scale=alt.Scale(domain=[0, x_max], nice=False),
+                    axis=alt.Axis(values=list(range(0, x_max + 1, x_step)), format="d")),
+            y=alt.Y("Spend:Q", title="Net sales (log scale)",
+                    scale=alt.Scale(type="log", domain=[10.0**low, 10.0**high], nice=False),
+                    axis=alt.Axis(values=y_ticks, format="~s")),
             color=alt.Color("Segment:N", scale=alt.Scale(domain=SEGMENTS, range=COLORS), legend=alt.Legend(orient="bottom")),
             tooltip=["Segment:N", "Invoices:Q", alt.Tooltip("Spend:Q", format=",.2f")],
         ).properties(height=380).interactive()
@@ -91,3 +106,4 @@ with campaign:
         export["CustomerID"] = export.CustomerID.astype(str).str.replace(r"^([=+@\-\t\r])", r"'\1", regex=True)
         st.download_button("Download audience CSV", export.to_csv(index=False), "spendlens-audience.csv", "text/csv", disabled=audience.empty, type="primary")
         st.dataframe(audience.head(8), hide_index=True)
+
